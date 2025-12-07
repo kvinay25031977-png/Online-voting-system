@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Online Voting System</title>
+
+  <style>
+    body {
+      margin: 15;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background: #e0d7d7;
+    }
+
+    .app-container {
+      width: 100%;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .card {
+      background:white;
+      border-radius: 50px;
+      padding: 30px;
+      max-width: 850px;
+      width: 100%;
+      box-shadow: 0 0 20px rgba(0,0,0,0.2);
+    }
+
+    h1 {
+      font-size: 45px;
+       font-family: 'Times New Roman', Times, serif;
+      text-align: center;
+      background: linear-gradient(135deg,#062bcf,#613291);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 2px solid #010000;
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 12px;
+      background: #08a833;
+      color: rgb(31, 39, 138);
+      border: black;
+      border-radius: 13px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .candidates-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit,minmax(160px,1fr));
+      gap: 15px;
+    }
+
+    .candidate-card {
+      background: #b086b4;
+      padding: 15px;
+      text-align: center;
+      border: 2px solid #100000;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    .candidate-card.selected {
+      border-color: #033663;
+      background: #2b39a1;
+    }
+
+    .success {
+      text-align: center;
+      padding: 30px;
+        background: #a8a19a;
+    }
+
+    .error-message {
+      color: red;
+      padding: 10px;
+      background: #fee;
+      border-left: 4px solid #c33;
+      display: none;
+    }
+
+  </style>
+</head>
+
+<body>
+
+<div class="app-container">
+  <div class="card">
+
+    <div id="loginSection">
+      <h1>Online Voting System</h1>
+
+      <div id="errorMessage" class="error-message"></div>
+
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="voterName">Name</label>
+          <input id="voterName" type="text" required>
+        </div>
+
+        <div class="form-group">
+          <label for="voterUSN">USN</label>
+          <input id="voterUSN" type="text" required>
+        </div>
+
+        <div class="form-group">
+          <label for="voterPassword">Password</label>
+          <input id="voterPassword" type="password" required>
+        </div>
+
+        <button class="btn-primary" type="submit">Login</button>
+      </form>
+      <button onclick="openResultLogin()" class="btn-primary" style="margin-top:12px;">Admin – View Results</button>
+    </div>
+    <div id="votingSection" style="display:none;">
+      <h1>Cast Your Vote</h1>
+      <div id="voterInfo"></div>
+
+      <h3>Vote for Boys Representative</h3>
+      <div id="boysCandidates" class="candidates-grid"></div>
+
+      <h3>Vote for Girls Representative</h3>
+      <div id="girlsCandidates" class="candidates-grid"></div>
+
+      <button id="submitVoteBtn" class="btn-primary" disabled>Submit Vote</button>
+    </div>
+    <div id="successScreen" style="display:none;">
+      <div class="success">
+        <h2>✔ Vote Submitted Successfully!</h2>
+        <p>Thank you for voting.</p>
+      </div>
+    </div>
+    <div id="resultLogin" style="display:none; text-align:center; margin-top:16px;">
+      <h2>Admin Login</h2>
+      <input id="adminPass" type="password"
+             placeholder="Enter Admin Password"
+             style="width:80%; padding:10px; border-radius:8px; border:2px solid #ccc;">
+      <button class="btn-primary" onclick="checkAdmin()">View Results</button>
+      <p id="adminError" style="color:red; display:none; margin-top:8px;">Incorrect Password!</p>
+    </div>
+    <div id="resultPage" style="display:none; margin-top:12px;">
+      <h1>Voting Results</h1>
+
+      <h3>Boys Representative</h3>
+      <div id="resultBoys"></div>
+
+      <h3>Girls Representative</h3>
+      <div id="resultGirls"></div>
+
+      <button onclick="goHome()" class="btn-primary" style="margin-top:20px;">Back</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const registeredVoters = [
+    { name: "Arohi", usn: "CS005", password: "124" },
+    { name: "Amrutha", usn: "CS002", password: "456" },
+    { name: "Aishwarya", usn: "CS003", password: "789" },
+    { name: "Deekshitha", usn: "CS004", password: "143" },
+    { name: "Santosh", usn: "CS001", password: "142" },
+    { name: "Roshan", usn: "CS006", password: "145" },
+    { name: "Anil", usn: "CS007", password: "148" }
+    
+  ];
+  const boysCandidates = [
+    { name: "Vinay", usn: "CS005", emoji: "👨" },
+    { name: "Virat", usn: "CS006", emoji: "👨" },
+    { name: "Guru", usn: "CS007", emoji: "👨" },
+    { name: "Siddharth", usn: "CS008", emoji: "👨" }
+    
+  ];
+
+  const girlsCandidates = [
+    { name: "Riya", usn: "CS004", emoji: "👩" },
+    { name: "Sana", usn: "CS003", emoji: "👩" },
+    { name: "Imara", usn: "CS001", emoji: "👩" },
+    { name: "Zoya", usn: "CS002", emoji: "👩" }
+  ];
+
+  let currentVoter = null;
+  let selectedBoy = null;
+  let selectedGirl = null;
+  function renderCandidateList() {
+    const boysDiv = document.getElementById("boysCandidates");
+    const girlsDiv = document.getElementById("girlsCandidates");
+
+    boysDiv.innerHTML = "";
+    girlsDiv.innerHTML = "";
+
+    boysCandidates.forEach(c => {
+      const card = document.createElement("div");
+      card.className = "candidate-card";
+      card.innerHTML = `<div style="font-size:40px">${c.emoji}</div>
+                        <b>${c.name}</b><br>${c.usn}`;
+
+      card.onclick = () => {
+        document.querySelectorAll("#boysCandidates .candidate-card")
+          .forEach(card => card.classList.remove("selected"));
+        card.classList.add("selected");
+        selectedBoy = c;
+        checkSubmitActive();
+      };
+
+      boysDiv.appendChild(card);
+    });
+
+    girlsCandidates.forEach(c => {
+      const card = document.createElement("div");
+      card.className = "candidate-card";
+      card.innerHTML = `<div style="font-size:40px">${c.emoji}</div>
+                        <b>${c.name}</b><br>${c.usn}`;
+
+      card.onclick = () => {
+        document.querySelectorAll("#girlsCandidates .candidate-card")
+          .forEach(card => card.classList.remove("selected"));
+        card.classList.add("selected");
+        selectedGirl = c;
+        checkSubmitActive();
+      };
+
+      girlsDiv.appendChild(card);
+    });
+  }
+
+  function checkSubmitActive() {
+    document.getElementById("submitVoteBtn").disabled = !(selectedBoy && selectedGirl);
+  }
+
+  let voteCount = JSON.parse(localStorage.getItem("voteCount")) || {
+    boys: {},
+    girls: {}
+  };
+
+  boysCandidates.forEach(c => {
+    if (!voteCount.boys[c.usn]) voteCount.boys[c.usn] = 0;
+  });
+
+  girlsCandidates.forEach(c => {
+    if (!voteCount.girls[c.usn]) voteCount.girls[c.usn] = 0;
+  });
+
+  localStorage.setItem("voteCount", JSON.stringify(voteCount));
+
+  document.getElementById("loginForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+
+    const name = document.getElementById("voterName").value.trim();
+    const usn = document.getElementById("voterUSN").value.trim().toUpperCase();
+    const pass = document.getElementById("voterPassword").value.trim();
+
+    const errorBox = document.getElementById("errorMessage");
+
+    const voter = registeredVoters.find(v =>
+      v.name.toLowerCase() === name.toLowerCase() &&
+      v.usn.toUpperCase() === usn &&
+      v.password === pass
+    );
+
+    if (!voter) {
+      errorBox.textContent = "Invalid Name / USN / Password!";
+      errorBox.style.display = "block";
+      return;
+    }
+
+    if (localStorage.getItem("voted_" + voter.usn)) {
+      errorBox.textContent = "You have already voted. You cannot vote again!";
+      errorBox.style.display = "block";
+      return;
+    }
+
+    currentVoter = voter;
+    errorBox.style.display = "none";
+
+    document.getElementById("loginSection").style.display = "none";
+    document.getElementById("votingSection").style.display = "block";
+
+    document.getElementById("voterInfo").innerHTML =
+      <p><b>${voter.name}</b> (${voter.usn})</p>;
+
+    renderCandidateList();
+  });
+
+  document.getElementById("submitVoteBtn").addEventListener("click", function () {
+    if (!selectedBoy || !selectedGirl || !currentVoter) return;
+
+    voteCount.boys[selectedBoy.usn]++;
+    voteCount.girls[selectedGirl.usn]++;
+
+    localStorage.setItem("voteCount", JSON.stringify(voteCount));
+
+    localStorage.setItem("voted_" + currentVoter.usn, "true");
+
+    document.getElementById("votingSection").style.display = "none";
+    document.getElementById("successScreen").style.display = "block";
+  });
+
+  function openResultLogin() {
+    document.getElementById("loginSection").style.display = "none";
+    document.getElementById("votingSection").style.display = "none";
+    document.getElementById("successScreen").style.display = "none";
+    document.getElementById("resultPage").style.display = "none";
+    document.getElementById("resultLogin").style.display = "block";
+  }
+
+  function checkAdmin() {
+    const pass = document.getElementById("adminPass").value;
+    const err  = document.getElementById("adminError");
+
+    if (pass === "admin123") {
+      err.style.display = "none";
+      loadResults();
+    } else {
+      err.style.display = "block";
+    }
+  }
+
+  function loadResults() {
+    document.getElementById("resultLogin").style.display = "none";
+    document.getElementById("resultPage").style.display = "block";
+
+    let vc = JSON.parse(localStorage.getItem("voteCount")) || { boys: {}, girls: {} };
+
+    let boysHTML = "";
+    boysCandidates.forEach(c => {
+      let count = vc.boys[c.usn] || 0;
+      boysHTML += <p><b>${c.name}</b> (${c.usn}) — <span>${count} votes</span></p>;
+    });
+    document.getElementById("resultBoys").innerHTML = boysHTML;
+
+    let girlsHTML = "";
+    girlsCandidates.forEach(c => {
+      let count = vc.girls[c.usn] || 0;
+      girlsHTML += <p><b>${c.name}</b> (${c.usn}) — <span>${count} votes</span></p>;
+    });
+    document.getElementById("resultGirls").innerHTML = girlsHTML;
+  }
+
+  function goHome() {
+    location.reload();
+  }
+
+</script>
+
+</body>
+</html>
